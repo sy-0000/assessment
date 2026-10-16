@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>活動控制台</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --mat: #DCE4DA; --grid: #C7D2C4; --ink: #1E2B2F; --muted: #56676A;
+    --paper: #FFFFFF; --field: #FFFFFF; --safety: #F3C623; --error: #B3261E;
+    color-scheme: light;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --mat: #1A2422; --grid: #26332F; --ink: #E8EEE9; --muted: #A3B2AE;
+            --paper: #222E2C; --field: #1A2422; --error: #FF8A80; color-scheme: dark; }
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--ink);
+    font: 400 16px/1.7 "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background-color: var(--mat);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 20px 48px; }
+  h1 { font-size: 30px; font-weight: 900; line-height: 1.25; margin: 0 0 20px; }
+  section { background: var(--paper); border: 2px solid var(--ink); border-radius: 6px; padding: 20px; }
+  label { display: block; font-weight: 500; margin: 0 0 6px; }
+  input {
+    width: 100%; padding: 11px 12px; font: inherit; font-size: 17px; color: var(--ink);
+    border: 1.5px solid var(--muted); border-radius: 4px; background: var(--field);
+  }
+  .row { display: flex; gap: 10px; }
+  .row input { flex: 1; min-width: 0; }
+  button {
+    font: inherit; font-weight: 700; font-size: 16px; padding: 11px 18px; border-radius: 6px;
+    border: 2px solid var(--ink); background: var(--paper); color: var(--ink); cursor: pointer; white-space: nowrap;
+  }
+  button.primary { background: var(--safety); color: #1E2B2F; }
+  button:disabled { opacity: .55; cursor: wait; }
+  :focus-visible { outline: 3px solid var(--safety); outline-offset: 2px; }
+  .msg { min-height: 1.7em; margin: 12px 0 0; font-weight: 500; color: var(--error); }
+
+  /* 進行中活動：QR 是主角 */
+  .live { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: start; }
+  .qr { background: #FFFFFF; padding: 14px; border: 2px solid var(--ink); border-radius: 6px;
+        box-shadow: 6px 6px 0 var(--safety); cursor: zoom-in; }
+  .qr img, .qr canvas { display: block; width: 220px; height: 220px; }
+  .name { font-size: 24px; font-weight: 900; margin: 0 0 4px; line-height: 1.3; word-break: break-all; }
+  .count { margin: 0 0 14px; color: var(--muted); }
+  .count b { font-size: 34px; color: var(--ink); margin-right: 2px; }
+  .link { font-size: 13px; word-break: break-all; color: var(--muted); margin: 0 0 16px;
+          border-left: 4px solid var(--safety); padding-left: 10px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .archive { margin-top: 24px; padding-top: 18px; border-top: 2px dashed var(--ink); }
+  .archive p { margin: 0 0 10px; font-size: 15px; color: var(--muted); }
+
+  /* 投影模式：切割墊上的一張大白紙 */
+  .stage { position: fixed; inset: 0; z-index: 20; color: #1E2B2F;
+           background-color: #DCE4DA;
+           background-image: linear-gradient(#C7D2C4 1px, transparent 1px), linear-gradient(90deg, #C7D2C4 1px, transparent 1px);
+           background-size: 32px 32px;
+           display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh;
+           padding: env(safe-area-inset-top, 0px) 4vw env(safe-area-inset-bottom, 0px); cursor: zoom-out; }
+  .stage h2 { margin: 0; font-size: clamp(28px, 5vw, 60px); font-weight: 900; text-align: center; line-height: 1.25; }
+  .stage .big { background: #FFFFFF; padding: 2.5vmin; border: 3px solid #1E2B2F; border-radius: 8px;
+                box-shadow: 1.2vmin 1.2vmin 0 #F3C623; }
+  .stage .big img, .stage .big canvas { display: block; width: min(60vh, 80vw); height: min(60vh, 80vw); }
+  .stage p { margin: 0; font-size: clamp(16px, 2.2vw, 26px); font-weight: 500; }
+  [hidden] { display: none !important; }
+
+  @media (max-width: 600px) {
+    .live { grid-template-columns: 1fr; }
+    .qr { justify-self: start; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>活動控制台</h1>
+
+  <section id="login">
+    <label for="pin">管理 PIN</label>
+    <div class="row">
+      <input id="pin" type="password" inputmode="numeric" autocomplete="current-password">
+      <button class="primary" id="loginBtn">進入</button>
+    </div>
+    <p class="msg" id="loginMsg" role="alert"></p>
+  </section>
+
+  <section id="create" hidden>
+    <label for="evName">活動名稱</label>
+    <div class="row">
+      <input id="evName" type="text" maxlength="40" placeholder="例如：師培中心AI工作坊">
+      <button class="primary" id="createBtn">建立活動</button>
+    </div>
+    <p class="msg" id="createMsg" role="alert"></p>
+  </section>
+
+  <section id="live" hidden>
+    <div class="live">
+      <div class="qr" id="qr" title="點一下放大投影" role="button" tabindex="0" aria-label="放大 QR code 投影"></div>
+      <div>
+        <p class="name" id="liveName"></p>
+        <p class="count">已收到 <b id="count">0</b> 件作品</p>
+        <p class="link" id="link"></p>
+        <div class="actions">
+          <button class="primary" id="projectBtn">全螢幕投影 QR code</button>
+          <button id="copyBtn">複製上傳連結</button>
+          <button id="folderBtn">開啟雲端資料夾</button>
+        </div>
+      </div>
+    </div>
+    <div class="archive">
+      <p>活動結束後封存：資料夾會移到「封存區」，QR code 立即失效。</p>
+      <button id="archiveBtn">封存活動</button>
+      <p class="msg" id="liveMsg" role="alert"></p>
+    </div>
+  </section>
+</main>
+
+<div class="stage" id="stage" hidden>
+  <h2 id="stageName"></h2>
+  <div class="big" id="bigQr"></div>
+  <p>掃描 QR code 上傳你的創意作品（點任意處關閉）</p>
+</div>
+
+<script src="config.js"></script>
+<script>
+const GAS = window.APP_CONFIG.GAS_URL;
+const $ = id => document.getElementById(id);
+let pin = '';
+let current = null;
+let timer = null;
+
+try { pin = sessionStorage.getItem('pin') || ''; } catch (e) {}
+
+async function call(payload) {
+  const res = await fetch(GAS, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ ...payload, pin })
+  });
+  return res.json();
+}
+
+function show(id) {
+  ['login', 'create', 'live'].forEach(s => $(s).hidden = s !== id);
+}
+
+function uploadUrl(token) {
+  return new URL('upload.html?code=' + token, location.href).href;
+}
+
+function drawQr(el, text, size) {
+  el.innerHTML = '';
+  new QRCode(el, { text, width: size, height: size, correctLevel: QRCode.CorrectLevel.M });
+}
+
+function render(r) {
+  current = r.active;
+  if (!current) { show('create'); clearInterval(timer); timer = null; return; }
+  const url = uploadUrl(current.token);
+  $('liveName').textContent = current.name;
+  $('stageName').textContent = current.name;
+  $('count').textContent = current.count;
+  $('link').textContent = url;
+  if ($('qr').dataset.url !== url) {
+    drawQr($('qr'), url, 480);
+    drawQr($('bigQr'), url, 1000);
+    $('qr').dataset.url = url;
+  }
+  show('live');
+  if (!timer) timer = setInterval(refresh, 15000);
+}
+
+async function refresh() {
+  try {
+    const r = await call({ action: 'status' });
+    if (r.ok) render(r);
+  } catch (e) {}
+}
+
+async function login() {
+  pin = $('pin').value.trim() || pin;
+  if (!pin) return;
+  $('loginBtn').disabled = true; $('loginMsg').textContent = '';
+  try {
+    const r = await call({ action: 'status' });
+    if (!r.ok) {
+      $('loginMsg').textContent = r.msg;
+      pin = ''; try { sessionStorage.removeItem('pin'); } catch (e) {}
+      show('login');
+    } else {
+      try { sessionStorage.setItem('pin', pin); } catch (e) {}
+      render(r);
+    }
+  } catch (e) {
+    $('loginMsg').textContent = '連不上伺服器，請確認 config.js 的網址與網路。';
+    show('login');
+  }
+  $('loginBtn').disabled = false;
+}
+
+$('loginBtn').addEventListener('click', login);
+$('pin').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+$('createBtn').addEventListener('click', async () => {
+  const name = $('evName').value.trim();
+  if (!name) { $('createMsg').textContent = '請輸入活動名稱。'; return; }
+  $('createBtn').disabled = true; $('createMsg').textContent = '建立中…';
+  try {
+    const r = await call({ action: 'create', name });
+    if (r.ok) { $('createMsg').textContent = ''; $('evName').value = ''; render(r); }
+    else $('createMsg').textContent = r.msg;
+  } catch (e) { $('createMsg').textContent = '建立失敗，請再試一次。'; }
+  $('createBtn').disabled = false;
+});
+
+$('archiveBtn').addEventListener('click', async () => {
+  if (!confirm(`確定封存「${current.name}」？封存後觀眾就無法再上傳。`)) return;
+  $('archiveBtn').disabled = true; $('liveMsg').textContent = '封存中…';
+  try {
+    const r = await call({ action: 'archive' });
+    $('liveMsg').textContent = r.ok ? '' : r.msg;
+    if (r.ok) { $('qr').dataset.url = ''; render(r); }
+  } catch (e) { $('liveMsg').textContent = '封存失敗，請再試一次。'; }
+  $('archiveBtn').disabled = false;
+});
+
+function openStage() { $('stage').hidden = false; refresh(); }
+$('projectBtn').addEventListener('click', openStage);
+$('qr').addEventListener('click', openStage);
+$('qr').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openStage(); } });
+$('stage').addEventListener('click', () => { $('stage').hidden = true; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('stage').hidden = true; });
+
+$('copyBtn').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(uploadUrl(current.token)); $('copyBtn').textContent = '已複製'; }
+  catch (e) { $('copyBtn').textContent = '請手動複製下方連結'; }
+  setTimeout(() => { $('copyBtn').textContent = '複製上傳連結'; }, 2000);
+});
+$('folderBtn').addEventListener('click', () => {
+  if (current && current.folderUrl) window.open(current.folderUrl, '_blank', 'noopener');
+});
+
+if (pin) login(); else show('login');
+</script>
+</body>
+</html>

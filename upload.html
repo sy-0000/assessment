@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>創意作品上傳</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --mat: #DCE4DA;      /* 切割墊綠灰 */
+    --grid: #C7D2C4;
+    --ink: #1E2B2F;
+    --muted: #56676A;
+    --paper: #FFFFFF;
+    --field: #FFFFFF;
+    --drop: #FAFBF8;
+    --safety: #F3C623;   /* 安全黃：唯一的強調色 */
+    --error: #B3261E;
+    color-scheme: light;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --mat: #1A2422; --grid: #26332F; --ink: #E8EEE9; --muted: #A3B2AE;
+            --paper: #222E2C; --field: #1A2422; --drop: #1E2927; --error: #FF8A80; color-scheme: dark; }
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--ink);
+    font: 400 16px/1.7 "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background-color: var(--mat);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  main { max-width: 480px; margin: 0 auto; padding: 32px 20px 48px; }
+  .event { display: inline-block; font-size: 14px; font-weight: 500; background: var(--safety); color: #1E2B2F;
+           padding: 2px 10px; border-radius: 4px; margin: 0 0 10px; }
+  h1 { font-size: 30px; font-weight: 900; line-height: 1.25; margin: 0 0 6px; }
+  .lead { color: var(--muted); margin: 0 0 24px; }
+  .sheet { background: var(--paper); border: 2px solid var(--ink); border-radius: 6px; padding: 20px; }
+  .notice { font-size: 14px; color: var(--muted); border-left: 4px solid var(--safety); padding: 2px 0 2px 12px; margin-bottom: 20px; }
+  .notice strong { color: var(--ink); }
+  label.field { display: block; font-weight: 500; margin: 16px 0 6px; }
+  input[type=text], input[type=email], textarea {
+    width: 100%; padding: 11px 12px; font: inherit; color: var(--ink);
+    border: 1.5px solid var(--muted); border-radius: 4px; background: var(--field);
+  }
+  textarea { resize: vertical; min-height: 88px; line-height: 1.6; }
+  .counter { text-align: right; font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .counter.over { color: var(--error); font-weight: 700; }
+  input:focus-visible, textarea:focus-visible, button:focus-visible, .drop:focus-within { outline: 3px solid var(--safety); outline-offset: 2px; }
+  .drop {
+    position: relative; display: block; margin-top: 16px; padding: 22px 16px; text-align: center; cursor: pointer;
+    border: 2px dashed var(--ink); border-radius: 6px; background: var(--drop);
+  }
+  .drop input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .drop .big { font-weight: 700; font-size: 18px; display: block; word-break: break-all; }
+  .drop .small { font-size: 14px; color: var(--muted); }
+  #preview { max-width: 100%; max-height: 220px; margin: 12px auto 0; border-radius: 4px; display: none; }
+  .check { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; font-size: 15px; }
+  .check input { width: 20px; height: 20px; margin-top: 4px; flex: none; accent-color: var(--ink); }
+  #emailWrap { display: none; }
+  button {
+    width: 100%; margin-top: 24px; padding: 14px; font: 700 18px/1 inherit; font-family: inherit;
+    color: #1E2B2F; background: var(--safety); border: 2px solid var(--ink); border-radius: 6px; cursor: pointer;
+  }
+  button:disabled { opacity: .55; cursor: wait; }
+  #status { margin-top: 14px; min-height: 1.7em; font-weight: 500; }
+  #status.err { color: var(--error); }
+  .done { text-align: center; padding: 12px 0; }
+  .done .big { font-size: 22px; font-weight: 900; display: block; }
+  [hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="event" id="eventName" hidden></p>
+  <h1>上傳你的創意作品</h1>
+  <p class="lead">上傳後，AI 會依生活科技評量標準給你回饋。</p>
+
+  <div class="sheet" id="sheet">
+    <div class="done" id="loading">正在確認活動…</div>
+
+    <div id="formBody" hidden>
+      <div class="notice">
+        <strong>資料使用說明：</strong>你上傳的檔案與填寫的資料僅供本次活動體驗使用，檔案會交給 Gemini 進行分析，<strong>活動結束後封存，不作其他用途，並於評分完成後刪除</strong>。
+      </div>
+
+      <label class="field" for="workName">作品名稱</label>
+      <input type="text" id="workName" maxlength="40" placeholder="例如：可調式手機架">
+
+      <label class="field" for="nickname">暱稱</label>
+      <input type="text" id="nickname" maxlength="40" autocomplete="nickname">
+
+      <label class="field" for="intro">作品簡易說明</label>
+      <textarea id="intro" maxlength="100" placeholder="用一兩句話說明作品的用途或設計重點"></textarea>
+      <div class="counter" id="counter">0 / 100</div>
+
+      <label class="drop">
+        <input type="file" id="file" accept="image/jpeg,image/png,application/pdf">
+        <span class="big" id="dropText">選擇檔案</span>
+        <span class="small">JPG、PNG 或 PDF，10MB 以內</span>
+        <img id="preview" alt="作品預覽">
+      </label>
+
+      <div class="check">
+        <input type="checkbox" id="wantMail">
+        <label for="wantMail">我想用 Email 收到評語（老師確認後才會寄出）</label>
+      </div>
+      <div id="emailWrap">
+        <label class="field" for="email">Email</label>
+        <input type="email" id="email" autocomplete="email" inputmode="email">
+      </div>
+
+      <div class="check">
+        <input type="checkbox" id="agree">
+        <label for="agree">我已閱讀並同意上方資料使用說明</label>
+      </div>
+
+      <button id="submit">上傳作品</button>
+      <div id="status" role="status"></div>
+    </div>
+  </div>
+</main>
+
+<script src="config.js"></script>
+<script>
+  const API_URL = window.APP_CONFIG.GAS_URL;
+  // 活動代碼從 QR code 網址的 ?code= 讀取，不寫在程式裡
+  const CODE = new URLSearchParams(location.search).get('code') || '';
+
+  const MAX = 10 * 1024 * 1024;
+  const OK_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+  const $ = id => document.getElementById(id);
+
+  function api(payload) {
+    return fetch(API_URL, {
+      method: 'POST',
+      // text/plain 可以避免跨網域預檢，GAS 才收得到
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).then(r => r.json());
+  }
+
+  function finish(title, text) {
+    $('sheet').innerHTML = '';
+    const d = document.createElement('div'); d.className = 'done';
+    const b = document.createElement('span'); b.className = 'big'; b.textContent = title;
+    d.append(b, document.createTextNode(text));
+    $('sheet').append(d);
+  }
+
+  function say(msg, isErr) {
+    $('status').textContent = msg;
+    $('status').className = isErr ? 'err' : '';
+  }
+
+  // 進入頁面先確認活動是否開放
+  if (!CODE) {
+    finish('請掃描現場的 QR code', '直接開啟這個網址無法上傳作品。');
+  } else {
+    api({ action: 'check', code: CODE })
+      .then(res => {
+        if (!res.ok) return finish('目前無法上傳', res.msg);
+        $('eventName').textContent = res.eventName;
+        $('eventName').hidden = false;
+        $('loading').hidden = true;
+        $('formBody').hidden = false;
+      })
+      .catch(() => finish('連不上伺服器', '請確認網路後重新整理頁面。'));
+  }
+
+  $('wantMail').addEventListener('change', e => {
+    $('emailWrap').style.display = e.target.checked ? 'block' : 'none';
+  });
+
+  $('intro').addEventListener('input', () => {
+    const n = [...$('intro').value].length;
+    $('counter').textContent = n + ' / 100';
+    $('counter').className = 'counter' + (n > 100 ? ' over' : '');
+  });
+
+  $('file').addEventListener('change', () => {
+    const f = $('file').files[0];
+    const img = $('preview');
+    if (!f) return;
+    $('dropText').textContent = f.name;
+    if (f.type.startsWith('image/')) { img.src = URL.createObjectURL(f); img.style.display = 'block'; }
+    else img.style.display = 'none';
+  });
+
+  $('submit').addEventListener('click', () => {
+    const f = $('file').files[0];
+    if (!$('workName').value.trim() || !$('nickname').value.trim()) return say('請填寫作品名稱與暱稱。', true);
+    if (!$('intro').value.trim()) return say('請填寫作品簡易說明。', true);
+    if ([...$('intro').value.trim()].length > 100) return say('簡易說明請在 100 字以內。', true);
+    if (!f) return say('請選擇要上傳的檔案。', true);
+    if (!OK_TYPES.includes(f.type)) return say('只接受 JPG、PNG 或 PDF 檔案。', true);
+    if (f.size > MAX) return say('檔案超過 10MB，請壓縮後再上傳。', true);
+    if ($('wantMail').checked && !$('email').value.trim()) return say('勾選收信請填寫 Email。', true);
+    if (!$('agree').checked) return say('請勾選同意資料使用說明。', true);
+
+    $('submit').disabled = true;
+    say('上傳中，請不要關閉頁面…');
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      api({
+        action: 'upload',
+        code: CODE,
+        workName: $('workName').value.trim(),
+        nickname: $('nickname').value.trim(),
+        intro: $('intro').value.trim(),
+        wantMail: $('wantMail').checked,
+        email: $('email').value.trim(),
+        agree: $('agree').checked,
+        mimeType: f.type,
+        data: reader.result.split(',')[1]
+      })
+        .then(res => {
+          if (!res.ok) throw new Error(res.msg);
+          finish('已上傳', '等大家都上傳完，我們一起看 AI 的評量結果。');
+        })
+        .catch(err => {
+          $('submit').disabled = false;
+          say(err.message || '上傳失敗，請再試一次。', true);
+        });
+    };
+    reader.onerror = () => { $('submit').disabled = false; say('讀取檔案失敗，請重新選擇。', true); };
+    reader.readAsDataURL(f);
+  });
+</script>
+</body>
+</html>
