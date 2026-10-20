@@ -1,258 +1,1150 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-Hant-TW">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>活動控制台</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<title>作品評量後台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="config.js"></script>
 <style>
   :root {
-    --mat: #DCE4DA; --grid: #C7D2C4; --ink: #1E2B2F; --muted: #56676A;
-    --paper: #FFFFFF; --field: #FFFFFF; --safety: #F3C623; --error: #B3261E;
+    --mat: #24584A;
+    --mat-line: rgba(255, 255, 255, .08);
+    --tape: #F3C63F;
+    --tape-ink: #3A2E05;
+    --bg: #F3F5F3;
+    --surface: #FFFFFF;
+    --raised: #FBFCFB;
+    --ink: #1C2421;
+    --muted: #5E6B66;
+    --line: #D5DDD9;
+    --ok: #2E7D5B;
+    --ok-bg: #E3F2EA;
+    --warn: #8A6A00;
+    --warn-bg: #FFF6D6;
+    --danger: #B93A27;
+    --danger-bg: #FBEAE6;
+    --focus: #2B7A65;
     color-scheme: light;
-    box-sizing: border-box;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   @media (prefers-color-scheme: dark) {
-    :root { --mat: #1A2422; --grid: #26332F; --ink: #E8EEE9; --muted: #A3B2AE;
-            --paper: #222E2C; --field: #1A2422; --error: #FF8A80; color-scheme: dark; }
+    :root {
+      --mat: #1C4639;
+      --mat-line: rgba(255, 255, 255, .06);
+      --bg: #101614;
+      --surface: #18201D;
+      --raised: #1E2724;
+      --ink: #E4EBE7;
+      --muted: #9AA9A2;
+      --line: #2E3A35;
+      --ok: #6FC79E;
+      --ok-bg: #173327;
+      --warn: #E9C55A;
+      --warn-bg: #332B10;
+      --danger: #F08A76;
+      --danger-bg: #3A1F1A;
+      --focus: #6FC7A6;
+      color-scheme: dark;
+    }
   }
-  *, *::before, *::after { box-sizing: inherit; }
+  [hidden] { display: none !important; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
   body {
-    margin: 0; min-height: 100vh; color: var(--ink);
-    font: 400 16px/1.7 "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    font-family: 'Noto Sans TC', system-ui, -apple-system, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.6;
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 2.5px solid var(--focus); outline-offset: 2px; }
+
+  .matbg {
     background-color: var(--mat);
     background-image:
-      linear-gradient(var(--grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-    background-size: 24px 24px;
+      linear-gradient(var(--mat-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--mat-line) 1px, transparent 1px);
+    background-size: 22px 22px;
+    color: #F4F7F5;
   }
-  main { max-width: 760px; margin: 0 auto; padding: 32px 20px 48px; }
-  h1 { font-size: 30px; font-weight: 900; line-height: 1.25; margin: 0 0 20px; }
-  section { background: var(--paper); border: 2px solid var(--ink); border-radius: 6px; padding: 20px; }
-  label { display: block; font-weight: 500; margin: 0 0 6px; }
-  input {
-    width: 100%; padding: 11px 12px; font: inherit; font-size: 17px; color: var(--ink);
-    border: 1.5px solid var(--muted); border-radius: 4px; background: var(--field);
+
+  .btn {
+    cursor: pointer; border-radius: 8px; padding: 8px 14px; font-weight: 500;
+    border: 1.5px solid var(--line); background: var(--surface); white-space: nowrap;
   }
-  .row { display: flex; gap: 10px; }
-  .row input { flex: 1; min-width: 0; }
-  button {
-    font: inherit; font-weight: 700; font-size: 16px; padding: 11px 18px; border-radius: 6px;
-    border: 2px solid var(--ink); background: var(--paper); color: var(--ink); cursor: pointer; white-space: nowrap;
+  .btn:hover { border-color: var(--muted); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.primary { background: var(--tape); border-color: var(--tape); color: var(--tape-ink); font-weight: 700; }
+  .btn.on-mat { background: transparent; border-color: rgba(244, 247, 245, .35); color: #F4F7F5; }
+  .btn.small { padding: 4px 10px; font-size: .85rem; }
+  .btn.block { width: 100%; }
+  .btn.danger-text { color: var(--danger); }
+  .spacer { flex: 1; }
+  .err { background: var(--danger-bg); color: var(--danger); border-radius: 8px; padding: 9px 12px; margin: 0 0 12px; }
+
+  /* 登入 */
+  .login { min-height: 100%; display: grid; place-items: center; padding: 20px; }
+  .login-card { width: min(380px, 100%); background: var(--surface); border-radius: 14px; padding: 28px 24px; color: var(--ink); }
+  .login-card h1 { margin: 0 0 18px; font-size: 1.3rem; }
+  .login-card label { display: block; font-weight: 500; margin-bottom: 6px; }
+  .login-card input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--raised); margin-bottom: 14px; }
+
+  /* 版面 */
+  .topbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 20px 12px;
   }
-  button.primary { background: var(--safety); color: #1E2B2F; }
-  button:disabled { opacity: .55; cursor: wait; }
-  :focus-visible { outline: 3px solid var(--safety); outline-offset: 2px; }
-  .msg { min-height: 1.7em; margin: 12px 0 0; font-weight: 500; color: var(--error); }
+  .topbar h1 { margin: 0; font-size: 1.1rem; flex: 1; }
+  .layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100% - 58px); }
+  .sidebar { border-right: 1px solid var(--line); padding: 16px; background: var(--surface); }
+  .act-list { margin-top: 14px; display: grid; gap: 4px; }
+  .act-item {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    background: none; border: 1.5px solid transparent; border-radius: 8px; padding: 9px 10px;
+  }
+  .act-item:hover { background: var(--raised); }
+  .act-item.active { border-color: var(--tape); background: var(--raised); }
+  .act-item b { display: block; font-weight: 500; }
+  .act-item small { color: var(--muted); display: flex; gap: 10px; align-items: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+  .dot.open { background: var(--ok); }
+  .main { padding: 20px 24px 60px; min-width: 0; }
+  .empty { color: var(--muted); padding: 60px 0; text-align: center; }
 
-  /* 進行中活動：QR 是主角 */
-  .live { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: start; }
-  .qr { background: #FFFFFF; padding: 14px; border: 2px solid var(--ink); border-radius: 6px;
-        box-shadow: 6px 6px 0 var(--safety); cursor: zoom-in; }
-  .qr img, .qr canvas { display: block; width: 220px; height: 220px; }
-  .name { font-size: 24px; font-weight: 900; margin: 0 0 4px; line-height: 1.3; word-break: break-all; }
-  .count { margin: 0 0 14px; color: var(--muted); }
-  .count b { font-size: 34px; color: var(--ink); margin-right: 2px; }
-  .link { font-size: 13px; word-break: break-all; color: var(--muted); margin: 0 0 16px;
-          border-left: 4px solid var(--safety); padding-left: 10px; }
-  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
-  .archive { margin-top: 24px; padding-top: 18px; border-top: 2px dashed var(--ink); }
-  .archive p { margin: 0 0 10px; font-size: 15px; color: var(--muted); }
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--line); }
+    .main { padding: 16px; }
+  }
 
-  /* 投影模式：切割墊上的一張大白紙 */
-  .stage { position: fixed; inset: 0; z-index: 20; color: #1E2B2F;
-           background-color: #DCE4DA;
-           background-image: linear-gradient(#C7D2C4 1px, transparent 1px), linear-gradient(90deg, #C7D2C4 1px, transparent 1px);
-           background-size: 32px 32px;
-           display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh;
-           padding: env(safe-area-inset-top, 0px) 4vw env(safe-area-inset-bottom, 0px); cursor: zoom-out; }
-  .stage h2 { margin: 0; font-size: clamp(28px, 5vw, 60px); font-weight: 900; text-align: center; line-height: 1.25; }
-  .stage .big { background: #FFFFFF; padding: 2.5vmin; border: 3px solid #1E2B2F; border-radius: 8px;
-                box-shadow: 1.2vmin 1.2vmin 0 #F3C623; }
-  .stage .big img, .stage .big canvas { display: block; width: min(60vh, 80vw); height: min(60vh, 80vw); }
-  .stage p { margin: 0; font-size: clamp(16px, 2.2vw, 26px); font-weight: 500; }
-  [hidden] { display: none !important; }
+  .act-head { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; justify-content: space-between; }
+  .act-head h2 { margin: 0; font-size: 1.45rem; line-height: 1.3; }
+  .act-sub { margin: 4px 0 0; color: var(--muted); }
+  .code {
+    font-weight: 700; letter-spacing: .12em; color: var(--ink);
+    background: var(--tape); color: var(--tape-ink); padding: 1px 8px; border-radius: 6px;
+  }
+  .act-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
-  @media (max-width: 600px) {
-    .live { grid-template-columns: 1fr; }
-    .qr { justify-self: start; }
+  .switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; margin-right: 6px; }
+  .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .switch-ui { width: 42px; height: 24px; border-radius: 999px; background: var(--line); position: relative; transition: background .2s; }
+  .switch-ui::after {
+    content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; transition: transform .2s;
+  }
+  .switch input:checked + .switch-ui { background: var(--ok); }
+  .switch input:checked + .switch-ui::after { transform: translateX(18px); }
+  .switch input:focus-visible + .switch-ui { outline: 2.5px solid var(--focus); outline-offset: 2px; }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 22px; margin: 18px 0; padding: 14px 0; border-block: 1px solid var(--line); }
+  .stat b { display: block; font-size: 1.4rem; line-height: 1.2; }
+  .stat span { color: var(--muted); font-size: .85rem; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 14px; }
+  .check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--muted); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+  .card {
+    position: relative; background: var(--surface); border: 1.5px solid var(--line);
+    border-radius: 10px; overflow: hidden; cursor: pointer; text-align: left; padding: 0;
+  }
+  .card:hover { border-color: var(--muted); }
+  .card.selected { border-color: var(--tape); }
+  .card-check {
+    position: absolute; top: 8px; left: 8px; z-index: 1; background: var(--surface);
+    border-radius: 6px; padding: 3px 5px; display: flex;
+  }
+  .card-check input { width: 18px; height: 18px; margin: 0; cursor: pointer; }
+  .thumb { aspect-ratio: 4 / 3; background: var(--raised); display: grid; place-items: center; color: var(--muted); font-size: .85rem; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .card-grade {
+    position: absolute; top: 8px; right: 8px; min-width: 36px; text-align: center;
+    background: var(--tape); color: var(--tape-ink); font-weight: 700; font-size: 1.1rem;
+    border-radius: 8px; padding: 2px 8px;
+  }
+  .card-body { padding: 10px 12px 12px; }
+  .card-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-title { color: var(--muted); font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tag { font-size: .78rem; padding: 1px 8px; border-radius: 999px; background: var(--raised); color: var(--muted); border: 1px solid var(--line); }
+  .tag.ok { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+  .tag.bad { background: var(--danger-bg); color: var(--danger); border-color: transparent; }
+
+  /* 作品詳情抽屜 */
+  .drawer-back { position: fixed; inset: 0; background: rgba(10, 16, 14, .45); z-index: 20; }
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(680px, 100%); z-index: 21;
+    background: var(--surface); display: flex; flex-direction: column;
+    box-shadow: -12px 0 40px rgba(0, 0, 0, .18);
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+    animation: slideIn .22s ease-out;
+  }
+  @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .drawer { animation: none; } }
+  .drawer-head { display: flex; gap: 12px; align-items: flex-start; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .drawer-head h3 { margin: 0; font-size: 1.15rem; }
+  .drawer-head p { margin: 2px 0 0; color: var(--muted); font-size: .9rem; }
+  .icon-btn { margin-left: auto; background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 4px 8px; color: var(--muted); }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px 24px; }
+  .media { background: var(--raised); border-radius: 10px; min-height: 160px; display: grid; place-items: center; color: var(--muted); overflow: hidden; }
+  .media img { width: 100%; max-height: 60vh; object-fit: contain; display: block; }
+  .meta { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 14px 0; font-size: .9rem; }
+  .meta dt { color: var(--muted); }
+  .meta dd { margin: 0; word-break: break-all; }
+  .status-box { border-radius: 8px; padding: 12px 14px; margin: 12px 0; }
+  .drawer-foot {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 12px 20px; border-top: 1px solid var(--line); background: var(--surface);
+  }
+  .dirty { color: var(--warn); font-size: .85rem; }
+
+  /* 編輯器 */
+  .ed-section { margin-top: 18px; }
+  .ed-label { display: flex; align-items: center; gap: 8px; font-weight: 500; margin-bottom: 6px; }
+  .ed-label .hint { color: var(--muted); font-weight: 400; font-size: .85rem; }
+  .ed-input, .ed-text {
+    width: 100%; padding: 9px 11px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--raised);
+  }
+  .ed-text { min-height: 74px; resize: vertical; line-height: 1.6; }
+  .grade-input { width: 90px; font-size: 1.3rem; font-weight: 700; text-align: center; }
+  .radio-row { display: flex; gap: 18px; flex-wrap: wrap; }
+  .dim-block { border-left: 4px solid var(--tape); padding: 4px 0 4px 14px; margin: 16px 0; }
+  .dim-block .dim-top { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .dim-block .dim-top input { font-weight: 700; }
+  .poly + .poly { margin-top: 10px; }
+  .poly-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: .88rem; color: var(--muted); }
+  .poly-top .btn { margin-left: auto; }
+
+  .polish { border: 1.5px dashed var(--tape); border-radius: 8px; padding: 10px; margin-top: 8px; background: var(--raised); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 2px 10px; font-size: .82rem; cursor: pointer; }
+  .polish-row { display: flex; gap: 8px; }
+  .polish-row input { flex: 1; padding: 6px 10px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--surface); min-width: 0; }
+  .polish-out { margin-top: 8px; }
+  .polish-actions { display: flex; gap: 8px; margin-top: 8px; }
+
+  /* 對話框 */
+  dialog {
+    border: none; border-radius: 14px; padding: 0; width: min(560px, calc(100% - 24px));
+    background: var(--surface); color: var(--ink);
+  }
+  dialog::backdrop { background: rgba(10, 16, 14, .5); }
+  .dlg-head { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .dlg-head h3 { margin: 0; font-size: 1.1rem; }
+  .dlg-body { padding: 16px 20px; max-height: 70vh; overflow-y: auto; }
+  .dlg-foot { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid var(--line); }
+  .f { margin-bottom: 14px; }
+  .f label { display: block; font-weight: 500; margin-bottom: 5px; }
+  .f .hint { color: var(--muted); font-size: .85rem; font-weight: 400; }
+  .f input[type=text], .f input[type=number], .f textarea {
+    width: 100%; padding: 9px 11px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--raised);
+  }
+  .f textarea { min-height: 80px; resize: vertical; }
+  .f textarea.tall { min-height: 220px; font-size: .9rem; }
+  .f2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  #qrDialog .dlg-body { text-align: center; }
+  #qrBox { display: inline-block; background: #fff; padding: 16px; border-radius: 10px; }
+  #qrBox img, #qrBox canvas { display: block; }
+  .qr-code { font-size: 2rem; font-weight: 700; letter-spacing: .2em; margin: 14px 0 2px; }
+  .qr-url { color: var(--muted); font-size: .85rem; word-break: break-all; }
+  #qrDialog.big { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; }
+  #qrDialog.big .dlg-body { max-height: none; display: grid; place-content: center; height: calc(100vh - 130px); }
+  #qrDialog.big .qr-code { font-size: 3.4rem; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+    background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 10px; z-index: 50; max-width: 90vw;
   }
 </style>
 </head>
 <body>
-<main>
-  <h1>活動控制台</h1>
 
-  <section id="login">
-    <label for="pin">管理 PIN</label>
-    <div class="row">
-      <input id="pin" type="password" inputmode="numeric" autocomplete="current-password">
-      <button class="primary" id="loginBtn">進入</button>
-    </div>
-    <p class="msg" id="loginMsg" role="alert"></p>
-  </section>
+<section id="loginView" class="login matbg" hidden>
+  <form id="loginForm" class="login-card">
+    <h1>作品評量後台</h1>
+    <p id="loginErr" class="err" hidden></p>
+    <label for="pw">管理密碼</label>
+    <input id="pw" type="password" autocomplete="current-password" required>
+    <button class="btn primary block" id="loginBtn" type="submit">登入</button>
+  </form>
+</section>
 
-  <section id="create" hidden>
-    <label for="evName">活動名稱</label>
-    <div class="row">
-      <input id="evName" type="text" maxlength="40" placeholder="例如：師培中心AI工作坊">
-      <button class="primary" id="createBtn">建立活動</button>
-    </div>
-    <p class="msg" id="createMsg" role="alert"></p>
-  </section>
-
-  <section id="live" hidden>
-    <div class="live">
-      <div class="qr" id="qr" title="點一下放大投影" role="button" tabindex="0" aria-label="放大 QR code 投影"></div>
-      <div>
-        <p class="name" id="liveName"></p>
-        <p class="count">已收到 <b id="count">0</b> 件作品</p>
-        <p class="link" id="link"></p>
-        <div class="actions">
-          <button class="primary" id="projectBtn">全螢幕投影 QR code</button>
-          <button id="copyBtn">複製上傳連結</button>
-          <button id="folderBtn">開啟雲端資料夾</button>
+<div id="appView" hidden>
+  <header class="topbar matbg">
+    <h1>作品評量後台</h1>
+    <button class="btn on-mat" id="refreshBtn" type="button">重新整理</button>
+    <button class="btn on-mat" id="logoutBtn" type="button">登出</button>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <button class="btn primary block" id="newActBtn" type="button">新增活動</button>
+      <nav id="actList" class="act-list" aria-label="活動列表"></nav>
+    </aside>
+    <main class="main">
+      <p id="emptyState" class="empty">還沒有活動。按「新增活動」建立第一個，系統會產生活動代碼與 QR code。</p>
+      <div id="actView" hidden>
+        <div class="act-head">
+          <div>
+            <h2 id="actTitle"></h2>
+            <p class="act-sub">活動代碼 <span id="actCode" class="code"></span></p>
+          </div>
+          <div class="act-tools">
+            <label class="switch">
+              <input type="checkbox" id="openToggle">
+              <span class="switch-ui"></span>
+              <span id="openLabel">開放上傳</span>
+            </label>
+            <button class="btn" id="qrBtn" type="button">QR code</button>
+            <button class="btn" id="editActBtn" type="button">活動設定</button>
+          </div>
         </div>
+        <div class="stats" id="stats"></div>
+        <div class="toolbar">
+          <label class="check"><input type="checkbox" id="selectAll"> 全選尚未寄信的已完成作品</label>
+          <button class="btn primary" id="sendSelBtn" type="button" disabled>寄出評量信</button>
+          <span class="spacer"></span>
+          <label class="check"><input type="checkbox" id="realNameToggle"> 顯示真實姓名</label>
+          <label class="check"><input type="checkbox" id="autoToggle" checked> 每 20 秒自動更新</label>
+        </div>
+        <p id="gridEmpty" class="empty" hidden>還沒有學生上傳。把 QR code 投影出來讓學生掃描吧。</p>
+        <div id="grid" class="grid"></div>
       </div>
-    </div>
-    <div class="archive">
-      <p>活動結束後封存：資料夾會移到「封存區」，QR code 立即失效。</p>
-      <button id="archiveBtn">封存活動</button>
-      <p class="msg" id="liveMsg" role="alert"></p>
-    </div>
-  </section>
-</main>
-
-<div class="stage" id="stage" hidden>
-  <h2 id="stageName"></h2>
-  <div class="big" id="bigQr"></div>
-  <p>掃描 QR code 上傳你的創意作品（點任意處關閉）</p>
+    </main>
+  </div>
 </div>
 
-<script src="config.js"></script>
+<!-- 作品詳情 -->
+<div id="drawerBack" class="drawer-back" hidden></div>
+<aside id="drawer" class="drawer" hidden aria-label="作品詳情">
+  <div class="drawer-head">
+    <div>
+      <h3 id="dTitle"></h3>
+      <p id="dWho"></p>
+    </div>
+    <button class="icon-btn" id="dClose" type="button" aria-label="關閉">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div id="dMedia" class="media">載入圖片中…</div>
+    <dl id="dMeta" class="meta"></dl>
+    <div id="dStatus"></div>
+    <div id="dEditor"></div>
+  </div>
+  <div class="drawer-foot" id="dFoot">
+    <button class="btn" id="dRestore" type="button">還原 AI 版本</button>
+    <button class="btn" id="dRerun" type="button">重新分析</button>
+    <span class="spacer"></span>
+    <span class="dirty" id="dDirty" hidden>尚未儲存</span>
+    <button class="btn" id="dSave" type="button">儲存</button>
+    <button class="btn primary" id="dSaveSend" type="button">儲存並寄信</button>
+  </div>
+</aside>
+
+<!-- 活動設定 -->
+<dialog id="actDialog">
+  <form id="actForm" method="dialog">
+    <div class="dlg-head"><h3 id="actDlgTitle">新增活動</h3></div>
+    <div class="dlg-body">
+      <p id="actErr" class="err" hidden></p>
+      <div class="f">
+        <label for="aName">活動名稱</label>
+        <input type="text" id="aName" maxlength="60" required>
+      </div>
+      <div class="f">
+        <label for="aDesc">給學生的說明 <span class="hint">（選填，顯示在上傳頁最上方）</span></label>
+        <textarea id="aDesc" maxlength="500"></textarea>
+      </div>
+      <div class="f">
+        <label for="aRubric">AI 評分標準 <span class="hint">（向度、等第、無效條件）</span></label>
+        <textarea id="aRubric" class="tall" maxlength="5000"></textarea>
+        <button class="btn small" id="aDefault" type="button">改回預設標準</button>
+      </div>
+      <div class="f2">
+        <div class="f">
+          <label for="aMaxPer">每人上傳上限 <span class="hint">（0 為不限）</span></label>
+          <input type="number" id="aMaxPer" min="0" max="99" value="3">
+        </div>
+        <div class="f">
+          <label for="aMaxTotal">活動總上傳上限 <span class="hint">（0 為不限）</span></label>
+          <input type="number" id="aMaxTotal" min="0" max="9999" value="200">
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="aShowGrade" checked> 學生上傳後的畫面顯示 AI 初評等第</label>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn" type="button" id="actCancel">取消</button>
+      <button class="btn primary" type="submit" id="actSave">儲存活動</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- QR code -->
+<dialog id="qrDialog">
+  <div class="dlg-head">
+    <h3 id="qrTitle"></h3>
+  </div>
+  <div class="dlg-body">
+    <div id="qrBox"></div>
+    <div class="qr-code" id="qrCode"></div>
+    <div class="qr-url" id="qrUrl"></div>
+  </div>
+  <div class="dlg-foot">
+    <button class="btn" type="button" id="qrCopy">複製網址</button>
+    <button class="btn" type="button" id="qrDownload">下載圖片</button>
+    <button class="btn" type="button" id="qrBig">投影模式</button>
+    <button class="btn primary" type="button" id="qrClose">關閉</button>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" hidden role="status"></div>
+
 <script>
-const GAS = window.APP_CONFIG.GAS_URL;
-const $ = id => document.getElementById(id);
-let pin = '';
-let current = null;
-let timer = null;
+(function () {
+  const CFG = window.APP_CONFIG || {};
+  const API_URL = CFG.API_URL || '';
+  const $ = id => document.getElementById(id);
 
-try { pin = sessionStorage.getItem('pin') || ''; } catch (e) {}
+  const STATUS = {
+    queued: { text: '排隊中', cls: 'warn' },
+    processing: { text: '分析中', cls: 'warn' },
+    done: { text: '已完成', cls: 'ok' },
+    invalid: { text: '無效退件', cls: 'bad' },
+    failed: { text: '分析失敗', cls: 'bad' }
+  };
+  const POLISH_CHIPS = ['語氣更溫和', '更具體', '更精簡', '國中生聽得懂', '更正式'];
 
-async function call(payload) {
-  const res = await fetch(GAS, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ ...payload, pin })
-  });
-  return res.json();
-}
+  const state = {
+    token: null,
+    activities: [],
+    defaultRubric: '',
+    actId: null,
+    subs: [],
+    selected: new Set(),
+    thumbs: new Map(),
+    detailId: null,
+    dirty: false,
+    editingActId: null
+  };
 
-function show(id) {
-  ['login', 'create', 'live'].forEach(s => $(s).hidden = s !== id);
-}
-
-function uploadUrl(token) {
-  return new URL('upload.html?code=' + token, location.href).href;
-}
-
-function drawQr(el, text, size) {
-  el.innerHTML = '';
-  new QRCode(el, { text, width: size, height: size, correctLevel: QRCode.CorrectLevel.M });
-}
-
-function render(r) {
-  current = r.active;
-  if (!current) { show('create'); clearInterval(timer); timer = null; return; }
-  const url = uploadUrl(current.token);
-  $('liveName').textContent = current.name;
-  $('stageName').textContent = current.name;
-  $('count').textContent = current.count;
-  $('link').textContent = url;
-  if ($('qr').dataset.url !== url) {
-    drawQr($('qr'), url, 480);
-    drawQr($('bigQr'), url, 1000);
-    $('qr').dataset.url = url;
+  /* ---------- 共用 ---------- */
+  function h(tag, props, ...kids) {
+    const el = document.createElement(tag);
+    Object.entries(props || {}).forEach(([k, v]) => {
+      if (v === null || v === undefined || v === false) return;
+      if (k === 'class') el.className = v;
+      else if (k === 'text') el.textContent = v;
+      else if (k === 'value') el.value = v;
+      else if (k === 'checked') el.checked = !!v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : v);
+    });
+    kids.flat().forEach(c => {
+      if (c === null || c === undefined || c === false) return;
+      el.append(c instanceof Node ? c : String(c));
+    });
+    return el;
   }
-  show('live');
-  if (!timer) timer = setInterval(refresh, 15000);
-}
 
-async function refresh() {
-  try {
-    const r = await call({ action: 'status' });
-    if (r.ok) render(r);
-  } catch (e) {}
-}
-
-async function login() {
-  pin = $('pin').value.trim() || pin;
-  if (!pin) return;
-  $('loginBtn').disabled = true; $('loginMsg').textContent = '';
-  try {
-    const r = await call({ action: 'status' });
-    if (!r.ok) {
-      $('loginMsg').textContent = r.msg;
-      pin = ''; try { sessionStorage.removeItem('pin'); } catch (e) {}
-      show('login');
-    } else {
-      try { sessionStorage.setItem('pin', pin); } catch (e) {}
-      render(r);
+  async function api(action, data) {
+    if (!API_URL || API_URL.indexOf('你的部署ID') >= 0) throw new Error('尚未設定後端網址（config.js）');
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ action, token: state.token }, data || {}))
+    });
+    if (!res.ok) throw new Error('連線失敗（' + res.status + '）');
+    const r = await res.json();
+    if (r.auth === false) {
+      logout(r.msg);
+      throw new Error(r.msg);
     }
-  } catch (e) {
-    $('loginMsg').textContent = '連不上伺服器，請確認 config.js 的網址與網路。';
-    show('login');
+    return r;
   }
-  $('loginBtn').disabled = false;
-}
 
-$('loginBtn').addEventListener('click', login);
-$('pin').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+  let toastTimer = null;
+  function toast(msg) {
+    $('toast').textContent = msg;
+    $('toast').hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { $('toast').hidden = true; }, 3200);
+  }
 
-$('createBtn').addEventListener('click', async () => {
-  const name = $('evName').value.trim();
-  if (!name) { $('createMsg').textContent = '請輸入活動名稱。'; return; }
-  $('createBtn').disabled = true; $('createMsg').textContent = '建立中…';
-  try {
-    const r = await call({ action: 'create', name });
-    if (r.ok) { $('createMsg').textContent = ''; $('evName').value = ''; render(r); }
-    else $('createMsg').textContent = r.msg;
-  } catch (e) { $('createMsg').textContent = '建立失敗，請再試一次。'; }
-  $('createBtn').disabled = false;
-});
+  function setErr(id, msg) { $(id).textContent = msg || ''; $(id).hidden = !msg; }
 
-$('archiveBtn').addEventListener('click', async () => {
-  if (!confirm(`確定封存「${current.name}」？封存後觀眾就無法再上傳。`)) return;
-  $('archiveBtn').disabled = true; $('liveMsg').textContent = '封存中…';
-  try {
-    const r = await call({ action: 'archive' });
-    $('liveMsg').textContent = r.ok ? '' : r.msg;
-    if (r.ok) { $('qr').dataset.url = ''; render(r); }
-  } catch (e) { $('liveMsg').textContent = '封存失敗，請再試一次。'; }
-  $('archiveBtn').disabled = false;
-});
+  function fmtTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d)) return iso;
+    return d.toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+  }
 
-function openStage() { $('stage').hidden = false; refresh(); }
-$('projectBtn').addEventListener('click', openStage);
-$('qr').addEventListener('click', openStage);
-$('qr').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openStage(); } });
-$('stage').addEventListener('click', () => { $('stage').hidden = true; });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') $('stage').hidden = true; });
+  function displayName(s) {
+    if ($('realNameToggle').checked) return s.studentName + '（' + s.studentId + '）';
+    return s.nickname || s.studentName;
+  }
 
-$('copyBtn').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(uploadUrl(current.token)); $('copyBtn').textContent = '已複製'; }
-  catch (e) { $('copyBtn').textContent = '請手動複製下方連結'; }
-  setTimeout(() => { $('copyBtn').textContent = '複製上傳連結'; }, 2000);
-});
-$('folderBtn').addEventListener('click', () => {
-  if (current && current.folderUrl) window.open(current.folderUrl, '_blank', 'noopener');
-});
+  async function busy(btn, label, fn) {
+    const old = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = label;
+    try { return await fn(); } finally { btn.disabled = false; btn.textContent = old; }
+  }
 
-if (pin) login(); else show('login');
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (e) {
+      const t = h('textarea', { value: text });
+      document.body.append(t);
+      t.select();
+      document.execCommand('copy');
+      t.remove();
+    }
+    toast('已複製');
+  }
+
+  function studentUrl(code) {
+    const base = CFG.STUDENT_URL || new URL('index.html', location.href).href;
+    const u = new URL(base);
+    u.searchParams.set('a', code);
+    return u.href;
+  }
+
+  /* ---------- 登入 ---------- */
+  function getToken() { try { return sessionStorage.getItem('admin_token'); } catch (e) { return null; } }
+  function saveToken(t) { try { t ? sessionStorage.setItem('admin_token', t) : sessionStorage.removeItem('admin_token'); } catch (e) {} }
+
+  $('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    setErr('loginErr', '');
+    await busy($('loginBtn'), '登入中…', async () => {
+      try {
+        const r = await api('login', { password: $('pw').value });
+        if (!r.ok) return setErr('loginErr', r.msg);
+        state.token = r.token;
+        saveToken(r.token);
+        $('pw').value = '';
+        enterApp();
+      } catch (err) {
+        setErr('loginErr', err.message);
+      }
+    });
+  });
+
+  function logout(msg) {
+    if (state.token && !msg) api('logout').catch(() => {});
+    state.token = null;
+    saveToken(null);
+    closeDrawer(true);
+    $('appView').hidden = true;
+    $('loginView').hidden = false;
+    setErr('loginErr', msg || '');
+  }
+  $('logoutBtn').addEventListener('click', () => logout());
+
+  async function enterApp() {
+    $('loginView').hidden = true;
+    $('appView').hidden = false;
+    await loadActivities();
+  }
+
+  /* ---------- 活動 ---------- */
+  async function loadActivities(selectId) {
+    try {
+      const r = await api('listActivities');
+      if (!r.ok) return toast(r.msg);
+      state.activities = r.activities;
+      state.defaultRubric = r.defaultRubric;
+      if (selectId) state.actId = selectId;
+      if (!state.activities.find(a => a.id === state.actId)) state.actId = state.activities[0] ? state.activities[0].id : null;
+      renderActList();
+      renderActHead();
+      if (state.actId) await loadSubs();
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+
+  function currentAct() { return state.activities.find(a => a.id === state.actId) || null; }
+
+  function renderActList() {
+    const list = $('actList');
+    list.innerHTML = '';
+    state.activities.forEach(a => {
+      list.append(h('button', {
+        class: 'act-item' + (a.id === state.actId ? ' active' : ''), type: 'button',
+        onclick: () => { if (a.id !== state.actId) selectAct(a.id); }
+      },
+        h('b', { text: a.name }),
+        h('small', {}, h('span', { class: 'dot' + (a.open ? ' open' : '') }), a.open ? '開放中' : '已關閉', a.counts.total + ' 件')
+      ));
+    });
+  }
+
+  async function selectAct(id) {
+    state.actId = id;
+    state.selected.clear();
+    state.subs = [];
+    renderActList();
+    renderActHead();
+    $('grid').innerHTML = '';
+    await loadSubs();
+  }
+
+  function renderActHead() {
+    const a = currentAct();
+    $('emptyState').hidden = !!a;
+    $('actView').hidden = !a;
+    if (!a) return;
+    $('actTitle').textContent = a.name;
+    $('actCode').textContent = a.id;
+    $('openToggle').checked = a.open;
+    $('openLabel').textContent = a.open ? '開放上傳' : '已關閉上傳';
+  }
+
+  $('openToggle').addEventListener('change', async e => {
+    const a = currentAct();
+    const open = e.target.checked;
+    try {
+      const r = await api('setActivityStatus', { id: a.id, open });
+      if (!r.ok) throw new Error(r.msg);
+      a.open = open;
+      renderActList();
+      renderActHead();
+      toast(open ? '已開放上傳' : '已關閉上傳，學生無法再送出作品');
+    } catch (err) {
+      e.target.checked = !open;
+      toast(err.message);
+    }
+  });
+
+  /* 活動設定對話框 */
+  function openActDialog(a) {
+    state.editingActId = a ? a.id : null;
+    $('actDlgTitle').textContent = a ? '活動設定' : '新增活動';
+    $('aName').value = a ? a.name : '';
+    $('aDesc').value = a ? a.description : '';
+    $('aRubric').value = a ? a.rubric : state.defaultRubric;
+    $('aMaxPer').value = a ? a.maxPerStudent : 3;
+    $('aMaxTotal').value = a ? a.maxTotal : 200;
+    $('aShowGrade').checked = a ? a.showGrade : true;
+    setErr('actErr', '');
+    $('actDialog').showModal();
+  }
+  $('newActBtn').addEventListener('click', () => openActDialog(null));
+  $('editActBtn').addEventListener('click', () => openActDialog(currentAct()));
+  $('actCancel').addEventListener('click', () => $('actDialog').close());
+  $('aDefault').addEventListener('click', () => { $('aRubric').value = state.defaultRubric; });
+
+  $('actForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const isNew = !state.editingActId;
+    await busy($('actSave'), '儲存中…', async () => {
+      try {
+        const r = await api('saveActivity', {
+          activity: {
+            id: state.editingActId,
+            name: $('aName').value,
+            description: $('aDesc').value,
+            rubric: $('aRubric').value,
+            maxPerStudent: $('aMaxPer').value,
+            maxTotal: $('aMaxTotal').value,
+            showGrade: $('aShowGrade').checked
+          }
+        });
+        if (!r.ok) return setErr('actErr', r.msg);
+        $('actDialog').close();
+        state.selected.clear();
+        await loadActivities(r.id);
+        toast(isNew ? '活動已建立' : '已儲存活動設定');
+        if (isNew) openQr();
+      } catch (err) {
+        setErr('actErr', err.message);
+      }
+    });
+  });
+
+  /* QR code */
+  function drawQr(size) {
+    const a = currentAct();
+    const url = studentUrl(a.id);
+    $('qrBox').innerHTML = '';
+    new QRCode($('qrBox'), { text: url, width: size, height: size, correctLevel: QRCode.CorrectLevel.M });
+    $('qrTitle').textContent = a.name;
+    $('qrCode').textContent = a.id;
+    $('qrUrl').textContent = url;
+  }
+  function openQr() {
+    $('qrDialog').classList.remove('big');
+    $('qrBig').textContent = '投影模式';
+    drawQr(260);
+    $('qrDialog').showModal();
+  }
+  $('qrBtn').addEventListener('click', openQr);
+  $('qrClose').addEventListener('click', () => $('qrDialog').close());
+  $('qrCopy').addEventListener('click', () => copyText(studentUrl(currentAct().id)));
+  $('qrBig').addEventListener('click', () => {
+    const big = $('qrDialog').classList.toggle('big');
+    $('qrBig').textContent = big ? '一般大小' : '投影模式';
+    drawQr(big ? Math.floor(Math.min(innerWidth, innerHeight - 260) * 0.9) : 260);
+  });
+  $('qrDownload').addEventListener('click', () => {
+    const a = currentAct();
+    const canvas = document.createElement('canvas');
+    const url = studentUrl(a.id);
+    const tmp = h('div');
+    new QRCode(tmp, { text: url, width: 800, height: 800, correctLevel: QRCode.CorrectLevel.M });
+    const qr = tmp.querySelector('canvas');
+    canvas.width = 900;
+    canvas.height = 1040;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(qr, 50, 50);
+    ctx.fillStyle = '#1C2421';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 64px "Noto Sans TC", sans-serif';
+    ctx.fillText(a.id, 450, 940);
+    ctx.font = '32px "Noto Sans TC", sans-serif';
+    ctx.fillText(a.name.slice(0, 24), 450, 1000);
+    const link = h('a', { href: canvas.toDataURL('image/png'), download: 'QR_' + a.id + '.png' });
+    link.click();
+  });
+
+  /* ---------- 作品列表 ---------- */
+  async function loadSubs() {
+    const id = state.actId;
+    if (!id) return;
+    try {
+      const r = await api('listSubmissions', { activityId: id });
+      if (!r.ok) return toast(r.msg);
+      if (id !== state.actId) return;
+      state.subs = r.submissions;
+      const ids = new Set(state.subs.map(s => s.id));
+      state.selected.forEach(x => { if (!ids.has(x)) state.selected.delete(x); });
+      updateCounts();
+      renderGrid();
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+
+  function updateCounts() {
+    const a = currentAct();
+    if (!a) return;
+    const n = st => state.subs.filter(s => st.indexOf(s.status) >= 0).length;
+    a.counts = {
+      total: state.subs.length,
+      done: n(['done', 'invalid']),
+      pending: n(['queued', 'processing']),
+      failed: n(['failed']),
+      emailed: state.subs.filter(s => s.emailedAt).length
+    };
+    const box = $('stats');
+    box.innerHTML = '';
+    [['已上傳', a.counts.total], ['分析完成', a.counts.done], ['處理中', a.counts.pending],
+     ['分析失敗', a.counts.failed], ['已寄信', a.counts.emailed]].forEach(([label, v]) => {
+      box.append(h('div', { class: 'stat' }, h('b', { text: v }), h('span', { text: label })));
+    });
+    renderActList();
+  }
+
+  function sendable(s) { return (s.status === 'done' || s.status === 'invalid') && s.email && !s.emailedAt; }
+
+  const thumbObserver = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      thumbObserver.unobserve(en.target);
+      loadThumb(en.target.dataset.id, en.target);
+    });
+  }, { rootMargin: '200px' });
+
+  async function loadThumb(id, box) {
+    if (!state.thumbs.has(id)) {
+      try {
+        const r = await api('getFile', { id, thumb: true });
+        state.thumbs.set(id, r.ok && r.base64 ? 'data:' + r.mimeType + ';base64,' + r.base64 : (r.pdf ? 'PDF' : ''));
+      } catch (e) {
+        return;
+      }
+    }
+    paintThumb(box, state.thumbs.get(id));
+  }
+
+  function paintThumb(box, v) {
+    box.innerHTML = '';
+    if (v && v !== 'PDF') box.append(h('img', { src: v, alt: '' }));
+    else box.textContent = v === 'PDF' ? 'PDF 檔案' : '沒有預覽';
+  }
+
+  function renderGrid() {
+    const grid = $('grid');
+    grid.innerHTML = '';
+    $('gridEmpty').hidden = state.subs.length > 0;
+    state.subs.forEach(s => {
+      const st = STATUS[s.status] || { text: s.status, cls: '' };
+      const thumb = h('div', { class: 'thumb', 'data-id': s.id }, '載入中…');
+      if (state.thumbs.has(s.id)) paintThumb(thumb, state.thumbs.get(s.id));
+      else thumbObserver.observe(thumb);
+
+      const tags = [h('span', { class: 'tag ' + st.cls, text: st.text })];
+      if (s.status === 'done' && s.aiGrade && s.finalGrade !== s.aiGrade) tags.push(h('span', { class: 'tag', text: 'AI 初評 ' + s.aiGrade }));
+      if (s.emailedAt) tags.push(h('span', { class: 'tag ok', text: '已寄信' }));
+      else if (!s.email) tags.push(h('span', { class: 'tag', text: '沒有 Email' }));
+
+      const canPick = s.status === 'done' || s.status === 'invalid';
+      const cb = h('input', {
+        type: 'checkbox', checked: state.selected.has(s.id), disabled: !canPick || !s.email,
+        'aria-label': '選取 ' + displayName(s),
+        onclick: e => e.stopPropagation(),
+        onchange: e => {
+          e.target.checked ? state.selected.add(s.id) : state.selected.delete(s.id);
+          card.classList.toggle('selected', e.target.checked);
+          updateSelUi();
+        }
+      });
+
+      const card = h('article', {
+        class: 'card' + (state.selected.has(s.id) ? ' selected' : ''), tabindex: '0',
+        onclick: () => openDrawer(s.id),
+        onkeydown: e => { if (e.key === 'Enter') openDrawer(s.id); }
+      },
+        h('label', { class: 'card-check', onclick: e => e.stopPropagation() }, cb),
+        s.status === 'done' && s.finalGrade ? h('div', { class: 'card-grade', text: s.finalGrade }) : null,
+        thumb,
+        h('div', { class: 'card-body' },
+          h('div', { class: 'card-name', text: displayName(s) }),
+          h('div', { class: 'card-title', text: s.title + '　' + fmtTime(s.createdAt) }),
+          h('div', { class: 'tags' }, tags)
+        )
+      );
+      grid.append(card);
+    });
+    updateSelUi();
+  }
+
+  function updateSelUi() {
+    const n = state.selected.size;
+    $('sendSelBtn').disabled = n === 0;
+    $('sendSelBtn').textContent = n ? '寄出評量信（' + n + '）' : '寄出評量信';
+    const candidates = state.subs.filter(sendable);
+    $('selectAll').checked = candidates.length > 0 && candidates.every(s => state.selected.has(s.id));
+  }
+
+  $('selectAll').addEventListener('change', e => {
+    state.subs.filter(sendable).forEach(s => e.target.checked ? state.selected.add(s.id) : state.selected.delete(s.id));
+    renderGrid();
+  });
+  $('realNameToggle').addEventListener('change', renderGrid);
+
+  $('sendSelBtn').addEventListener('click', async () => {
+    const ids = Array.from(state.selected);
+    const again = state.subs.filter(s => ids.indexOf(s.id) >= 0 && s.emailedAt).length;
+    let msg = '要寄出 ' + ids.length + ' 封評量信嗎？寄出的是你確認後的版本。';
+    if (again) msg += '\n其中 ' + again + ' 封之前已寄過，會再寄一次。';
+    if (!confirm(msg)) return;
+    await busy($('sendSelBtn'), '寄信中…', () => sendMails(ids, again > 0));
+  });
+
+  async function sendMails(ids, force) {
+    try {
+      const r = await api('sendEmails', { ids, force });
+      if (!r.ok) return toast(r.msg);
+      let msg = '已寄出 ' + r.sent + ' 封';
+      if (r.skipped.length) msg += '，略過 ' + r.skipped.length + ' 封（' + r.skipped[0].reason + '）';
+      toast(msg + '。今日剩餘額度 ' + r.quotaLeft + ' 封');
+      state.selected.clear();
+      await loadSubs();
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+
+  $('refreshBtn').addEventListener('click', () => loadActivities());
+
+  setInterval(() => {
+    if (!state.token || !state.actId || !$('autoToggle').checked) return;
+    if (document.visibilityState !== 'visible' || state.dirty) return;
+    loadSubs();
+  }, 20000);
+
+  /* ---------- 作品詳情 ---------- */
+  function sub(id) { return state.subs.find(s => s.id === id); }
+
+  async function openDrawer(id) {
+    const s = sub(id);
+    if (!s) return;
+    state.detailId = id;
+    setDirty(false);
+    $('drawerBack').hidden = false;
+    $('drawer').hidden = false;
+    renderDrawer(s);
+
+    const media = $('dMedia');
+    media.textContent = '載入檔案中…';
+    try {
+      const r = await api('getFile', { id });
+      if (state.detailId !== id) return;
+      media.innerHTML = '';
+      if (r.pdf) {
+        media.append(h('a', { href: r.url, target: '_blank', rel: 'noopener', class: 'btn', text: '在雲端硬碟開啟 PDF' }));
+      } else if (r.ok) {
+        media.append(h('a', { href: r.url, target: '_blank', rel: 'noopener' },
+          h('img', { src: 'data:' + r.mimeType + ';base64,' + r.base64, alt: s.title })));
+      } else {
+        media.textContent = r.msg;
+      }
+    } catch (err) {
+      media.textContent = err.message;
+    }
+  }
+
+  function renderDrawer(s) {
+    $('dTitle').textContent = s.title;
+    $('dWho').textContent = s.studentName + '　' + s.studentId + (s.nickname ? '　暱稱：' + s.nickname : '');
+
+    const meta = $('dMeta');
+    meta.innerHTML = '';
+    [['Email', s.email || '（未填）'], ['上傳時間', fmtTime(s.createdAt)],
+     ['寄信', s.emailedAt ? '已於 ' + fmtTime(s.emailedAt) + ' 寄出' : '尚未寄出']].forEach(([k, v]) => {
+      meta.append(h('dt', { text: k }), h('dd', { text: v }));
+    });
+
+    const status = $('dStatus');
+    status.innerHTML = '';
+    const hasResult = s.status === 'done' || s.status === 'invalid';
+    if (!hasResult) {
+      const st = STATUS[s.status] || { text: s.status, cls: '' };
+      const tone = st.cls === 'bad' ? 'var(--danger-bg)' : 'var(--warn-bg)';
+      const lines = [h('b', { text: st.text })];
+      if (s.status === 'failed') lines.push(h('div', { text: '錯誤訊息：' + (s.error || '未知') }), h('div', { text: '可以按「重新分析」再試一次。' }));
+      if (s.status === 'queued' && s.error) lines.push(h('div', { text: '上次嘗試失敗，系統會自動重試：' + s.error }));
+      status.append(h('div', { class: 'status-box', style: 'background:' + tone }, lines));
+    }
+
+    $('dEditor').innerHTML = '';
+    if (hasResult) renderEditor(s.finalResult || s.aiResult || {});
+
+    $('dRestore').disabled = !hasResult || !s.aiResult;
+    $('dSave').disabled = !hasResult;
+    $('dSaveSend').disabled = !hasResult || !s.email;
+    $('dRerun').disabled = s.status === 'processing';
+  }
+
+  function setDirty(v) {
+    state.dirty = v;
+    $('dDirty').hidden = !v;
+  }
+
+  function closeDrawer(force) {
+    if (!force && state.dirty && !confirm('有尚未儲存的修改，確定要關閉嗎？')) return;
+    state.detailId = null;
+    setDirty(false);
+    $('drawer').hidden = true;
+    $('drawerBack').hidden = true;
+  }
+  $('dClose').addEventListener('click', () => closeDrawer());
+  $('drawerBack').addEventListener('click', () => closeDrawer());
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('drawer').hidden && !document.querySelector('dialog[open]')) closeDrawer();
+  });
+
+  /* 編輯器 */
+  function renderEditor(res) {
+    const ed = $('dEditor');
+    ed.innerHTML = '';
+    const invalid = !!res.invalid;
+
+    const radios = h('div', { class: 'radio-row' },
+      h('label', { class: 'check' }, h('input', { type: 'radio', name: 'validity', value: 'valid', checked: !invalid }), '有效作品'),
+      h('label', { class: 'check' }, h('input', { type: 'radio', name: 'validity', value: 'invalid', checked: invalid }), '無效（退件）')
+    );
+    ed.append(h('div', { class: 'ed-section' }, h('div', { class: 'ed-label', text: '判定' }), radios));
+
+    const validBox = h('div', { id: 'validBox', hidden: invalid });
+    validBox.append(
+      h('div', { class: 'ed-section' },
+        h('label', { class: 'ed-label', for: 'eGrade' }, '等第'),
+        h('input', { id: 'eGrade', class: 'ed-input grade-input', maxlength: '10', value: res.grade || '' })
+      ),
+      h('div', { class: 'ed-section' }, polyField('評定理由', 'eSummary', res.summary || ''))
+    );
+    const dimsBox = h('div', { id: 'dimsBox' });
+    (res.dimensions || []).forEach(d => dimsBox.append(dimBlock(d)));
+    validBox.append(
+      h('div', { class: 'ed-section' }, h('div', { class: 'ed-label' }, '向度回饋', h('span', { class: 'hint', text: '學生會看到「做得好」與「可以加強」' }))),
+      dimsBox,
+      h('button', { class: 'btn small', type: 'button', text: '新增向度', onclick: () => { dimsBox.append(dimBlock({})); setDirty(true); } })
+    );
+
+    const invalidBox = h('div', { id: 'invalidBox', hidden: !invalid },
+      h('div', { class: 'ed-section' }, polyField('退件原因', 'eReason', res.reason || ''))
+    );
+
+    ed.append(validBox, invalidBox);
+    ed.querySelectorAll('input[name=validity]').forEach(r => r.addEventListener('change', () => {
+      const inv = ed.querySelector('input[name=validity]:checked').value === 'invalid';
+      validBox.hidden = inv;
+      invalidBox.hidden = !inv;
+    }));
+    ed.addEventListener('input', () => setDirty(true));
+    ed.addEventListener('change', () => setDirty(true));
+  }
+
+  function dimBlock(d) {
+    const block = h('div', { class: 'dim-block' });
+    block.append(
+      h('div', { class: 'dim-top' },
+        h('input', { class: 'ed-input dim-name', value: d.name || '', placeholder: '向度名稱', maxlength: '50', 'aria-label': '向度名稱' }),
+        h('button', { class: 'btn small danger-text', type: 'button', text: '刪除', onclick: () => { block.remove(); setDirty(true); } })
+      ),
+      polyField('做得好', null, d.strength || '', 'dim-strength'),
+      polyField('可以加強', null, d.suggestion || '', 'dim-suggestion')
+    );
+    return block;
+  }
+
+  /** 帶「AI 美化」按鈕的文字欄位 */
+  function polyField(label, id, value, cls) {
+    const ta = h('textarea', { class: 'ed-text ' + (cls || ''), id: id, 'aria-label': label });
+    ta.value = value;
+    const wrap = h('div', { class: 'poly' });
+    const btn = h('button', { class: 'btn small', type: 'button', text: 'AI 美化', onclick: () => togglePolish(wrap, ta) });
+    wrap.append(h('div', { class: 'poly-top' }, h('span', { text: label }), btn), ta);
+    return wrap;
+  }
+
+  function togglePolish(wrap, ta) {
+    const existing = wrap.querySelector('.polish');
+    document.querySelectorAll('.polish').forEach(p => p.remove());
+    if (existing) return;
+
+    const dir = h('input', { type: 'text', placeholder: '想要的方向，例如：語氣更溫和、加一個具體例子', maxlength: '200', 'aria-label': '美化方向' });
+    const out = h('textarea', { class: 'ed-text polish-out', hidden: true, 'aria-label': '美化結果' });
+    const actions = h('div', { class: 'polish-actions', hidden: true },
+      h('button', { class: 'btn small primary', type: 'button', text: '套用', onclick: () => {
+        ta.value = out.value;
+        setDirty(true);
+        panel.remove();
+      } }),
+      h('button', { class: 'btn small', type: 'button', text: '複製', onclick: () => copyText(out.value) }),
+      h('button', { class: 'btn small', type: 'button', text: '關閉', onclick: () => panel.remove() })
+    );
+    const gen = h('button', { class: 'btn small primary', type: 'button', text: '產生' });
+    gen.addEventListener('click', () => busy(gen, '產生中…', async () => {
+      if (!ta.value.trim()) return toast('這個欄位是空的');
+      try {
+        const r = await api('polish', { text: ta.value, direction: dir.value });
+        if (!r.ok) return toast(r.msg);
+        out.value = r.text;
+        out.hidden = false;
+        actions.hidden = false;
+      } catch (err) {
+        toast(err.message);
+      }
+    }));
+    dir.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); gen.click(); } });
+
+    const chips = h('div', { class: 'chips' }, POLISH_CHIPS.map(c => h('button', {
+      class: 'chip', type: 'button', text: c,
+      onclick: () => { dir.value = dir.value ? dir.value + '、' + c : c; dir.focus(); }
+    })));
+    const panel = h('div', { class: 'polish' }, chips, h('div', { class: 'polish-row' }, dir, gen), out, actions);
+    panel.addEventListener('input', e => e.stopPropagation());
+    wrap.append(panel);
+    dir.focus();
+  }
+
+  function collectEditor() {
+    const ed = $('dEditor');
+    const invalid = ed.querySelector('input[name=validity]:checked').value === 'invalid';
+    if (invalid) return { invalid: true, reason: $('eReason').value.trim() };
+    return {
+      invalid: false,
+      grade: $('eGrade').value.trim(),
+      summary: $('eSummary').value.trim(),
+      dimensions: Array.from(ed.querySelectorAll('.dim-block')).map(b => ({
+        name: b.querySelector('.dim-name').value.trim(),
+        strength: b.querySelector('.dim-strength').value.trim(),
+        suggestion: b.querySelector('.dim-suggestion').value.trim()
+      })).filter(d => d.name || d.strength || d.suggestion)
+    };
+  }
+
+  async function saveDetail() {
+    const id = state.detailId;
+    const result = collectEditor();
+    if (!result.invalid && !result.grade) throw new Error('請填寫等第');
+    const r = await api('saveResult', { id, result });
+    if (!r.ok) throw new Error(r.msg);
+    const i = state.subs.findIndex(s => s.id === id);
+    if (i >= 0) state.subs[i] = r.submission;
+    setDirty(false);
+    updateCounts();
+    renderGrid();
+    return r.submission;
+  }
+
+  $('dSave').addEventListener('click', () => busy($('dSave'), '儲存中…', async () => {
+    try {
+      const s = await saveDetail();
+      renderDrawer(s);
+      toast('已儲存');
+    } catch (err) {
+      toast(err.message);
+    }
+  }));
+
+  $('dSaveSend').addEventListener('click', () => busy($('dSaveSend'), '處理中…', async () => {
+    const cur = sub(state.detailId);
+    if (cur.emailedAt && !confirm('這份作品之前已寄過評量信，要再寄一次嗎？')) return;
+    try {
+      const id = state.detailId;
+      await saveDetail();
+      await sendMails([id], true);
+      const s = sub(id);
+      if (s && state.detailId === id) renderDrawer(s);
+    } catch (err) {
+      toast(err.message);
+    }
+  }));
+
+  $('dRestore').addEventListener('click', () => {
+    const s = sub(state.detailId);
+    if (!s || !s.aiResult) return;
+    renderEditor(s.aiResult);
+    setDirty(true);
+    toast('已換回 AI 原始版本，按「儲存」才會生效');
+  });
+
+  $('dRerun').addEventListener('click', () => {
+    if (!confirm('重新分析會用 AI 的新結果覆蓋目前的評語（包含你修改過的內容），確定嗎？')) return;
+    busy($('dRerun'), '分析中…', async () => {
+      try {
+        const id = state.detailId;
+        const r = await api('reevaluate', { id });
+        if (!r.ok) return toast(r.msg);
+        const i = state.subs.findIndex(s => s.id === id);
+        if (i >= 0) state.subs[i] = r.submission;
+        setDirty(false);
+        updateCounts();
+        renderGrid();
+        if (state.detailId === id) renderDrawer(r.submission);
+        toast(r.submission.status === 'done' || r.submission.status === 'invalid' ? '重新分析完成' : '分析沒有成功，系統稍後會自動重試');
+      } catch (err) {
+        toast(err.message);
+      }
+    });
+  });
+
+  /* ---------- 啟動 ---------- */
+  state.token = getToken();
+  if (state.token) enterApp(); else $('loginView').hidden = false;
+})();
 </script>
 </body>
 </html>
